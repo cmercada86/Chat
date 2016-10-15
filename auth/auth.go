@@ -56,15 +56,15 @@ func ExchangeAuthCodeForUser(authCode string) (model.User, error) {
 
 }
 
-func CheckAuth(state UUID) bool {
+func CheckAuth(state UUID) (model.User, bool) {
 	if !cache.Contains(state) {
 		log.Println("invalid state!")
-		return false
+		return model.User{}, false
 	}
 
 	user := cache.Get(state)
 
-	return !(user.ID == "")
+	return user, !(user.ID == "")
 
 }
 
