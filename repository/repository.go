@@ -2,9 +2,7 @@ package repository
 
 import (
 	"Chat/model"
-	"crypto/md5"
 	"database/sql"
-	"encoding/hex"
 	"fmt"
 	"log"
 	"strings"
@@ -54,12 +52,61 @@ func AddOrUpdateUserInfo(user model.User) {
 
 }
 
-func Close() {
-	db.Close()
+func AddChatMessage(room string, userID string, message string) {
+	query := fmt.Sprintf(
+		`
+		INSERT INTO chat_table (uid, user_id, timestamp,room, message)
+		VALUES (uuid_generate_v4(),'%s',NOW(),'%s','%s')
+
+		;`, userID, room, message)
+
+	if err := db.QueryRow(query).Scan(); err != nil && err != sql.ErrNoRows {
+		log.Println("Error adding or updating user: ", err)
+	}
+	//log.Println("Room: ", room, " Message: ", message)
 }
 
-func getMD5Hash(text string) string {
-	hasher := md5.New()
-	hasher.Write([]byte(text))
-	return hex.EncodeToString(hasher.Sum(nil))
+func GetChatMessages(room string) ([]model.Chat, error) {
+
+	var messages []model.Chat
+	query := fmt.Sprintf("SELECT * FROM chat_table WHERE room='%s';", room)
+
+	rows, err := db.Query(query)
+	if err != nil && err != sql.ErrNoRows {
+		//log.Println("Error querying chat_table: ", err)
+		return messages, err
+	}
+
+	for rows.Next() {
+		var message model.Chat
+		rows.Scan(&message)
+
+		messages = append(messages, message)
+
+	}
+
+	return messages, nil
+
+}
+
+func GetRoomNames() ([]string, error) {
+	var rooms []string
+
+	rows, err := db.Query("SELECT DISCTINCT room from chat_table;")
+	if err != nil && err != sql.ErrNoRows {
+		//log.Println("Error querying chat_table: ", err)
+		return rooms, err
+	}
+	for rows.Next() {
+		var room string
+		rows.Scan(&room)
+
+		rooms = append(rooms, room)
+
+	}
+	return rooms, nil
+}
+
+func Close() {
+	db.Close()
 }

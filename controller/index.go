@@ -11,7 +11,7 @@ import (
 
 func Index(w http.ResponseWriter, r *http.Request) {
 
-	state, _ := auth.NewUUID()
+	state, _ := model.NewUUID()
 
 	cache.Set(state, model.User{})
 	cache.Expire(state)

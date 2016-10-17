@@ -1,7 +1,7 @@
 package controller
 
 import (
-	"Chat/cache"
+	"Chat/auth"
 	"Chat/model"
 	"encoding/json"
 	"io/ioutil"
@@ -14,12 +14,11 @@ func SendDirectMessage(w http.ResponseWriter, r *http.Request) {
 
 	state := model.UUID(r.FormValue("state"))
 
-	if !cache.Contains(state) {
-		log.Println("invalid state!")
+	user, isAuth := auth.CheckAuth(state)
+	if !isAuth {
+		log.Println("Not authorized!")
 		return
 	}
-
-	user := cache.Get(state)
 
 	var dm model.DirectMessage
 
@@ -37,12 +36,11 @@ func SendDirectMessage(w http.ResponseWriter, r *http.Request) {
 func ReceiveDirectMessages(w http.ResponseWriter, r *http.Request) {
 	state := model.UUID(r.FormValue("state"))
 
-	if !cache.Contains(state) {
-		log.Println("invalid state!")
+	user, isAuth := auth.CheckAuth(state)
+	if !isAuth {
+		log.Println("Not authorized!")
 		return
 	}
-
-	user := cache.Get(state)
 
 	dms, err := repository.GetDirectMessages(user.ID)
 	if err != nil {

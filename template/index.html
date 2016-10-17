@@ -3,7 +3,7 @@
 <html>
 	<head>
 		<title>Grow developer test</title>
- <script src="https://apis.google.com/js/client:plusone.js?onload=startApp" async defer></script>
+<script src="https://apis.google.com/js/client:plusone.js?onload=startApp" async defer></script>
 <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js" ></script>
 		<meta name="description" content="Grow developer test" />
 		<style>
@@ -217,7 +217,7 @@
 	<body>
 		<div id="shadow_cover"></div>
 		<div id="modal_login">
-			<button id="login_button">Login</button>
+			<button id="login_button" >Login</button>
 		</div>
 		<div class="hidden" id="modal_create_room">
 			<form id="create_room_form">
@@ -259,8 +259,10 @@
 		</div>
 	</body>
 	<script>
+		$("#login_button").prop("disabled",true);
+
 		var auth2 = auth2 || {};
-		var state = '{{ .State }}';
+		//var state = '{{ .State }}';
 		var user ={};
 		// candidate will need to modify the following functions
 		var login = function() {
@@ -275,7 +277,7 @@
 						alert(JSON.stringify(error, undefined, 2));
 					});
    		 };
-			var reauthorize = function() {
+			var authorize = function() {
       	auth2.grantOfflineAccess({'redirect_uri': 'postmessage'}).then(
         function(result){
 					console.log(result.code)
@@ -284,14 +286,14 @@
         });
     	};
 			//signIn();
-			reauthorize();
+			authorize();
 			//loginComplete();
 		}
 		var connect= function(code){
-			console.log($(location).attr('origin') + '/connect')
+
 						$.ajax({
 							type: 'POST',
-							url: $(location).attr('origin') + '/connect',
+							url: $(location).attr('origin') + '/connect?state={{ .State }}',
 							//contentType: 'application/octet-stream; charset=utf-8',
 							dataType: 'json',
 							success: function(result) {
@@ -307,18 +309,37 @@
 
 		var createRoom = function() {
 
+		
 			createRoomComplete();
 		}
 
 		var submitMessage = function() {
+			  var room = $(".current_rooms_list_item.active").html();
+				
+				var message = document.getElementById("submit_message_form").querySelector("input").value;
+			  if(message !=""){
+					$.ajax({
+								type: 'POST',
+								url: $(location).attr('origin') + '/chat?room='+encodeURIComponent(room)+'&state={{ .State }}',
+								//contentType: 'application/octet-stream; charset=utf-8',
+								dataType: 'json',
+								success: function(result) {
+									submitMessageComplete(message);
+								},
+								processData: false,
+								data: message
+							});
+				}
 			
-			submitMessageComplete();
 		}
 
 		// candididate will call the following functions
 		var loginComplete = function() {
 			document.getElementById("chat_room").className = "";
 			closeModal();
+
+		
+			setCurrentRoomMessages()
 		}
 
 		var createRoomComplete = function() {
@@ -329,10 +350,33 @@
 			});
 			document.getElementById("create_new_room").insertAdjacentHTML("beforebegin", "<li class='current_rooms_list_item active'>" + roomName + "</li>");
 			closeModal();
+
+			$(".messages_list").empty();
+			//setCurrentRoomMessages()
+
 		}
 
-		var submitMessageComplete = function() {
-			var message = document.getElementById("submit_message_form").querySelector("input").value;
+		
+		var setCurrentRoomMessages = function(){
+			var room = $(".current_rooms_list_item.active").html();
+			//document.getElementById("chat_room").querySelector(".messages_list")
+			$(".messages_list").empty();
+			$.ajax({
+							type: 'GET',
+							url: $(location).attr('origin') + '/chat?room='+encodeURIComponent(room)+'&state={{ .State }}',
+							//contentType: 'application/octet-stream; charset=utf-8',
+							dataType: 'json',
+							success: function(result) {
+								//update room chat
+								console.log(result)
+							},
+							processData: false,
+				
+						});
+		}
+
+		var submitMessageComplete = function(message) {
+			
 
 			// stub
 			//var user = {
@@ -348,6 +392,8 @@
 					user.name + 
 				"</div></li>"
 			);
+
+			document.getElementById("submit_message_form").querySelector("input").value=""
 		}
 
 		// candidate can ignore everything below
@@ -375,7 +421,7 @@
 
 		function startApp() {
 			gapi.load('auth2', function(){
-
+				$("#login_button").prop("disabled",false);
 				// Retrieve the singleton for the GoogleAuth library and setup the client.
 				gapi.auth2.init({
 						client_id: '{{ .ClientID }}',

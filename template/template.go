@@ -5,7 +5,7 @@ import (
 	"net/http"
 )
 
-var templates = template.Must(template.ParseFiles("index.html"))
+var templates = template.Must(template.ParseFiles("template/index.html"))
 
 func Execute(w http.ResponseWriter, templatename string, data interface{}) {
 	templates.ExecuteTemplate(w, templatename, data)

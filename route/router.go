@@ -19,13 +19,25 @@ var routes = []Route{
 		Name:        "index",
 		Method:      "GET",
 		Pattern:     "/",
-		HandlerFunc: controller.index,
+		HandlerFunc: controller.Index,
 	},
 	Route{
 		Name:        "connect",
 		Method:      "POST",
 		Pattern:     "/connect",
-		HandlerFunc: controller.connect,
+		HandlerFunc: controller.Connect,
+	},
+	Route{
+		Name:        "chat",
+		Method:      "POST",
+		Pattern:     "/chat",
+		HandlerFunc: controller.AddMessage,
+	},
+	Route{
+		Name:        "chat",
+		Method:      "GET",
+		Pattern:     "/chat",
+		HandlerFunc: controller.GetMessages,
 	},
 }
 

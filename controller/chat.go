@@ -1,7 +1,7 @@
 package controller
 
 import (
-	"Chat/cache"
+	"Chat/auth"
 	"Chat/model"
 	"Chat/repository"
 	"encoding/json"
@@ -15,11 +15,12 @@ func AddMessage(w http.ResponseWriter, r *http.Request) {
 
 	state := model.UUID(r.FormValue("state"))
 
-	if !cache.Contains(state) {
-		log.Println("invalid state!")
+	user, isAuth := auth.CheckAuth(state)
+	if !isAuth {
+		log.Println("Not authorized!")
 		return
 	}
-	user := cache.Get(state)
+
 	room := r.FormValue("room")
 
 	message := string(x)
@@ -31,8 +32,9 @@ func GetMessages(w http.ResponseWriter, r *http.Request) {
 
 	state := model.UUID(r.FormValue("state"))
 
-	if !cache.Contains(state) {
-		log.Println("invalid state!")
+	_, isAuth := auth.CheckAuth(state)
+	if !isAuth {
+		log.Println("Not authorized!")
 		return
 	}
 
@@ -49,8 +51,9 @@ func GetMessages(w http.ResponseWriter, r *http.Request) {
 func GetRoomNames(w http.ResponseWriter, r *http.Request) {
 	state := model.UUID(r.FormValue("state"))
 
-	if !cache.Contains(state) {
-		log.Println("invalid state!")
+	_, isAuth := auth.CheckAuth(state)
+	if !isAuth {
+		log.Println("Not authorized!")
 		return
 	}
 

@@ -3,6 +3,7 @@ package controller
 import (
 	"Chat/auth"
 	"Chat/cache"
+	"Chat/model"
 	"Chat/repository"
 	"encoding/json"
 	"io/ioutil"
@@ -11,10 +12,10 @@ import (
 )
 
 func Connect(w http.ResponseWriter, r *http.Request) {
-	log.Println("HERE")
+
 	x, _ := ioutil.ReadAll(r.Body)
 
-	state := r.FormValue("state")
+	state := model.UUID(r.FormValue("state"))
 
 	if !cache.Contains(state) {
 		log.Println("invalid state!")

@@ -12,6 +12,9 @@ type Config struct {
 	GogClientID     string `json:"google_client_id"`
 	GogClientSecret string `json:"google_client_secret"`
 	RedisURL        string `json:"redis_url"`
+	PostgresHost    string `json:"postgres_host"`
+	PostgresUser    string `json:"postgres_user"`
+	PostgresPass    string `json:"postgres_pass"`
 }
 
 func GetConfig() *Config {
@@ -27,8 +30,11 @@ func ReadConfFile(filename string) {
 	defer configFile.Close()
 
 	jp := json.NewDecoder(configFile)
-	if err = jp.Decode(config); err != nil {
+
+	var tmpConfig Config
+	if err = jp.Decode(&tmpConfig); err != nil {
 		log.Fatal("Error parsing config file", err)
 	}
+	config = &tmpConfig
 
 }

@@ -25,7 +25,7 @@ func ConnectToCache(redisAddress string) {
 	}, maxConnections)
 }
 
-func Get(key string) model.User {
+func Get(key model.UUID) model.User {
 	c := redisPool.Get()
 	defer c.Close()
 
@@ -42,7 +42,7 @@ func Get(key string) model.User {
 
 }
 
-func Set(key string, value model.User) {
+func Set(key model.UUID, value model.User) {
 	c := redisPool.Get()
 	defer c.Close()
 
@@ -50,7 +50,7 @@ func Set(key string, value model.User) {
 	c.Do("SET", key, string(data))
 }
 
-func Contains(key string) bool {
+func Contains(key model.UUID) bool {
 	c := redisPool.Get()
 	defer c.Close()
 
@@ -63,7 +63,7 @@ func Contains(key string) bool {
 
 }
 
-func Expire(key string) {
+func Expire(key model.UUID) {
 	c := redisPool.Get()
 	defer c.Close()
 

@@ -14,7 +14,7 @@ func InitRealTime(ws *websocket.Conn) {
 	state := model.UUID(r.FormValue("state"))
 	room := r.FormValue("room")
 
-	userID, isAuth := auth.CheckAuth(state)
+	user, isAuth := auth.CheckAuth(state)
 	if !isAuth {
 		log.Println("Not authorized!")
 		return

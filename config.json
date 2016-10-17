@@ -1,0 +1,8 @@
+{
+    "google_client_id":"936208589137-rphq1itb9hk2a3tgbjc2jlb4hsja7s3e.apps.googleusercontent.com",
+    "google_client_secret":"l02_15N9el7EzvQsAcvmp7vg",
+    "redis_url":"54.174.139.95:6379",
+    "postgres_host":"54.174.139.95",
+    "postgres_user":"postgres",
+    "postgres_pass":"GrowChat!"
+}

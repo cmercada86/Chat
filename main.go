@@ -2,7 +2,9 @@ package main
 
 import (
 	"Chat/auth"
+	"Chat/cache"
 	"Chat/config"
+	"Chat/repository"
 	"Chat/route"
 	"log"
 	"net/http"
@@ -10,9 +12,14 @@ import (
 
 func main() {
 
-	config.ReadConfFile("")
+	config.ReadConfFile("config.json")
 
 	con := config.GetConfig()
+
+	cache.ConnectToCache(con.RedisURL)
+	defer cache.Close()
+
+	repository.NewRepository(con.PostgresUser, con.PostgresPass, con.PostgresHost)
 
 	auth.SetOAuth2Config(con.GogClientID, con.GogClientSecret)
 
