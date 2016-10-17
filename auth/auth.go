@@ -1,11 +1,13 @@
 package auth
 
 import (
+	"Chat/cache"
 	"Chat/model"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"strings"
 
 	"golang.org/x/oauth2"
@@ -51,6 +53,18 @@ func ExchangeAuthCodeForUser(authCode string) (model.User, error) {
 	data, _ := ioutil.ReadAll(userInfo.Body)
 
 	return model.UserFromGoogleUser(data)
+
+}
+
+func CheckAuth(state UUID) (model.User, bool) {
+	if !cache.Contains(state) {
+		log.Println("invalid state!")
+		return model.User{}, false
+	}
+
+	user := cache.Get(state)
+
+	return user, !(user.ID == "")
 
 }
 
