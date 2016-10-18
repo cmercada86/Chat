@@ -41,6 +41,12 @@ var routes = []Route{
 		Pattern:     "/chat/{room}/{state}",
 		HandlerFunc: controller.GetMessages,
 	},
+	Route{
+		Name:        "rooms",
+		Method:      "GET",
+		Pattern:     "/rooms/{state}",
+		HandlerFunc: controller.GetRoomNames,
+	},
 }
 
 func NewRouter() *mux.Router {

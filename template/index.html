@@ -232,7 +232,7 @@
 		<div class="hidden" id="chat_room">
 			<div class="main">
 				<ul class="current_rooms_list">
-					<li class="current_rooms_list_item active">Global</li>
+					<li id="Global" class="current_rooms_list_item active">Global</li>
 					<li id="create_new_room" class="current_rooms_list_item">+</li>
 				</ul>
 				<div class="messages_window">
@@ -263,6 +263,8 @@
 		</div>
 	</body>
 	<script>
+
+		console.log("here")
 		$("#login_button").prop("disabled",true);
 
 		var auth2 = auth2 || {};
@@ -331,6 +333,7 @@
 				var data = JSON.parse(e.data);
 				switch(data.type){
 					case "chat":
+					  
 						addMessageToChat(data.message)
 						break;
 					case "dm":
@@ -396,13 +399,20 @@
 			
 
 			
-			document.getElementById("create_new_room").insertAdjacentHTML("beforebegin", "<li id='"+roomName+"' class='current_rooms_list_item'>" + roomName + "</li>");
-			closeModal();
-
-			$(".messages_list").empty();
+			document.getElementById("create_new_room").insertAdjacentHTML("beforebegin", "<li id='"+roomName+"' class='current_rooms_list_item' >" + roomName + "</li>");
+	
+			
 			//setCurrentRoomMessages()
 
 		}
+		$(".current_rooms_list").on('click','li',function(){
+			id=$(this).attr('id');
+			if (id!="create_new_room"){
+				setRoomActive(id);
+				setCurrentRoomMessages();
+			}
+		});
+
 		var setRoomActive = function(roomName){
 			[].forEach.call(document.querySelectorAll(".current_rooms_list_item"), function(element) {
 				element.className = "current_rooms_list_item";
@@ -414,7 +424,7 @@
 		var setRooms = function(){
 			$.ajax({
 							type: 'GET',
-							url: $(location).attr('origin') + '/chat/{{ .State }}',
+							url: $(location).attr('origin') + '/rooms/{{ .State }}',
 							//contentType: 'application/octet-stream; charset=utf-8',
 							dataType: 'json',
 							success: function(result) {
@@ -456,13 +466,30 @@
 						});
 		}
 
+		var chatUsersContainID=function(id){
+			for (var key in chat_users){
+				if (key==id){
+					return true
+				}
+			}
+			return false
+		}
 
 		var addMessageToChat = function(chat){
 
 			//check chat_chat_users list for avatars, if not included, add to list
-			if(!chat.user.id in chat_users){
+			if(!chatUsersContainID(chat.user.id)){
 				addUserAvatar(chat.user)
+			}else{
+				console.log("user already in list: "+chat.user.name)
 			}
+
+			if (getCurrentRoom()!=chat.room){
+				//dont add to list if not current room
+				return
+			}
+
+
 
 			document.getElementById("chat_room").querySelector(".messages_list").insertAdjacentHTML("beforeend", 
 				"<li class='messages_list_item' data-user='" + 
@@ -492,12 +519,12 @@
 		}
 
 		var addUserAvatar= function(newUser){
-			console.log("Adding new user: ")
-			console.log(newUser)
-			$("<style type='text/css'> #chat_room .main .messages_window [data-user="+newUser.name.replace(" ", "_")+"] .avatar { background-image: url("+user.picture+");} </style>").appendTo("head");
-			chat_users[user.id]=newUser
+			console.log("Adding new user: ");
+			console.log(newUser);
+			$("<style type='text/css'> #chat_room .main .messages_window [data-user="+newUser.name.replace(" ", "_")+"] .avatar { background-image: url("+newUser.picture+");} </style>").appendTo("head");
+			chat_users[newUser.id]=newUser;
 			
-			$(".user_list").append("<li id='"+newUser.id+"' class='user_list_item' onClick=''>"+newUser.name+"</li>")
+			$(".user_list").append("<li id='"+newUser.id+"' class='user_list_item' onClick=''>"+newUser.name+"</li>");
 			
 			
 		}

@@ -92,7 +92,7 @@ func GetChatMessages(room string) ([]model.Chat, error) {
 func GetRoomNames() ([]string, error) {
 	var rooms []string
 
-	rows, err := db.Query("SELECT DISCTINCT room from chat_table;")
+	rows, err := db.Query("SELECT DISTINCT room from chat_table;")
 	if err != nil && err != sql.ErrNoRows {
 		//log.Println("Error querying chat_table: ", err)
 		return rooms, err

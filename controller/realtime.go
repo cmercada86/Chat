@@ -17,10 +17,12 @@ type wsMessage struct {
 	Message interface{} `json:"message"`
 }
 
+var room string
+
 func InitRealTime(ws *websocket.Conn) {
 	vars := mux.Vars(ws.Request())
 	state := model.UUID(vars["state"])
-	room := vars["room"]
+	room = vars["room"]
 	log.Println(state, room)
 	user, isAuth := auth.CheckAuth(state)
 	if !isAuth {
@@ -52,6 +54,7 @@ func InitRealTime(ws *websocket.Conn) {
 		select {
 		case chat := <-listener.ChatChannel:
 			//send chat
+
 			if err := websocket.Message.Send(ws, model.ObjectToJsonString(wsMessage{
 				Type:    "chat",
 				Message: &chat,
@@ -59,6 +62,7 @@ func InitRealTime(ws *websocket.Conn) {
 				//remove from db listener
 				i = 1440
 			}
+
 		case dm := <-listener.DMchannel:
 			//send dm
 			if err := websocket.Message.Send(ws, model.ObjectToJsonString(wsMessage{
@@ -69,7 +73,7 @@ func InitRealTime(ws *websocket.Conn) {
 				i = 1440
 			}
 		//case user := <-listener.UserChannel:
-		case room:=<-listener.RoomChannel:
+		case room := <-listener.RoomChannel:
 			if err := websocket.Message.Send(ws, model.ObjectToJsonString(wsMessage{
 				Type:    "room",
 				Message: &room,

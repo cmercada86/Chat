@@ -66,6 +66,7 @@ func GetRoomNames(w http.ResponseWriter, r *http.Request) {
 		log.Println("Error retrieving chats: ", err)
 		return
 	}
+	log.Println(rooms)
 
 	json.NewEncoder(w).Encode(rooms)
 }

@@ -27,9 +27,12 @@ func Connect(w http.ResponseWriter, r *http.Request) {
 	//get auth code	string
 	authCode := string(x)
 
-	user, err := auth.ExchangeAuthCodeForUser(authCode)
+	user, isPlusUser, err := auth.ExchangeAuthCodeForUser(authCode)
 	if err != nil {
 		log.Println("Error getting Auth code from Google: ", err)
+	}
+	if !isPlusUser {
+		//SEND UNAUTH
 	}
 
 	log.Println(user.Name, " Logged in!")

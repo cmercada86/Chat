@@ -27,7 +27,10 @@ var config = &oauth2.Config{
 	//ClientID:     clientID,
 	//ClientSecret: clientSecret,
 	// Scope determines which API calls you are authorized to make
-	Scopes:   []string{"https://www.googleapis.com/auth/plus.login"},
+	Scopes: []string{"https://www.googleapis.com/auth/plus.login",
+		"https://www.googleapis.com/auth/userinfo.profile",
+		"https://www.googleapis.com/auth/userinfo.email",
+	},
 	Endpoint: google.Endpoint,
 	// Use "postmessage" for the code-flow for server side apps
 	RedirectURL: "postmessage",
@@ -38,21 +41,28 @@ func SetOAuth2Config(clientID string, clientSecret string) {
 	config.ClientSecret = clientSecret
 }
 
-func ExchangeAuthCodeForUser(authCode string) (model.User, error) {
+func ExchangeAuthCodeForUser(authCode string) (model.User, bool, error) {
 	token, err := config.Exchange(oauth2.NoContext, authCode)
 	if err != nil {
-		return model.User{}, err
+		return model.User{}, false, err
 	}
 
 	client := config.Client(oauth2.NoContext, token)
+	//userInfo, err := client.Get("https://www.googleapis.com/oauth2/v3/userinfo")
 	userInfo, err := client.Get("https://www.googleapis.com/oauth2/v3/userinfo")
 	if err != nil {
-		return model.User{}, err
+		return model.User{}, false, err
 	}
 	defer userInfo.Body.Close()
 	data, _ := ioutil.ReadAll(userInfo.Body)
 
-	return model.UserFromGoogleUser(data)
+	googleID, _ := model.GetUserIDfromGoogleLogin(data)
+
+	plusInfo, err := client.Get("https://www.googleapis.com/plus/v1/people/" + googleID)
+	defer plusInfo.Body.Close()
+	plusData, _ := ioutil.ReadAll(plusInfo.Body)
+
+	return model.UserFromGooglePlusUser(plusData)
 
 }
 

@@ -16,7 +16,7 @@ func NewListener(user User, room string) *Listener {
 		ChatChannel: make(chan Chat, 5),
 		DMchannel:   make(chan DirectMessage, 5),
 		UserChannel: make(chan User, 5),
-		RoomChannel: make(chan string)
+		RoomChannel: make(chan string),
 	}
 }
 
