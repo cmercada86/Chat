@@ -15,6 +15,7 @@ var db_listener *pq.Listener
 var stop chan struct{}
 var listeners cmap.ConcurrentMap
 
+
 type notification struct {
 	Table string          `json:"table"`
 	Type  string          `json:"type"`
@@ -51,10 +52,16 @@ func NewDBtracker(user string, pass string, host string) {
 	listeners = cmap.New()
 
 	stop = make(chan struct{})
+	
+	
 
 }
 
 func Listen() {
+	
+	rooms,_:=GetRoomNames()
+	
+	
 	if err := db_listener.Listen("table_update"); err != nil {
 		log.Fatalln(err)
 	}
@@ -91,6 +98,16 @@ func Listen() {
 				for listener := range listeners.Iter() {
 					listener.Val.(*model.Listener).ChatChannel <- chat
 				}
+				
+				if !stringsContain(rooms, chat.Room){
+					rooms = append(rooms,chat.Room)
+					
+					for listener := range listeners.Iter() {
+						listener.Val.(*model.Listener).RoomChannel <- chat.Room
+					}
+				}
+				
+				
 			case "dm_table":
 			}
 		case <-stop:
@@ -136,6 +153,15 @@ func (t *Time) UnmarshalJSON(b []byte) (err error) {
 	b = b[1 : len(b)-1]
 	t.Time, err = time.Parse(format, string(b))
 	return
+}
+
+func stringsContain(sList []string,obj string)bool{
+	for _,s :=range sList{
+		if s==sList{
+			return true
+		}
+	}
+	return false
 }
 
 func logIssue(ev pq.ListenerEventType, err error) {
