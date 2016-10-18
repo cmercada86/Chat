@@ -69,7 +69,14 @@ func InitRealTime(ws *websocket.Conn) {
 				i = 1440
 			}
 		//case user := <-listener.UserChannel:
-
+		case room:=<-listener.RoomChannel:
+			if err := websocket.Message.Send(ws, model.ObjectToJsonString(wsMessage{
+				Type:    "room",
+				Message: &room,
+			})); err != nil {
+				//remove from db listener
+				i = 1440
+			}
 		case <-time.After(time.Second * 60):
 
 			i++
