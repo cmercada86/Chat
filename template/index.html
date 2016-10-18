@@ -347,8 +347,12 @@
 		}
 
 		var createRoom = function() {
-		
-			createRoomComplete();
+			var roomName = document.getElementById("create_room_form").querySelector("input").value;
+			addNewRoom(roomName);
+			//Set to active!
+			setRoomActive(roomName);
+			
+			
 		}
 
 		var getCurrentRoom = function(){
@@ -380,22 +384,49 @@
 			document.getElementById("chat_room").className = "";
 			closeModal();
 
-		
-			setCurrentRoomMessages()
+			setRooms();		
+			setCurrentRoomMessages();
 		}
 
-		var createRoomComplete = function() {
-			var roomName = document.getElementById("create_room_form").querySelector("input").value;
+		var addNewRoom = function(roomName) {
+			
 
-			[].forEach.call(document.querySelectorAll(".current_rooms_list_item"), function(element) {
-				element.className = "current_rooms_list_item";
-			});
-			document.getElementById("create_new_room").insertAdjacentHTML("beforebegin", "<li class='current_rooms_list_item active'>" + roomName + "</li>");
+			
+			document.getElementById("create_new_room").insertAdjacentHTML("beforebegin", "<li id='"+roomName+"' class='current_rooms_list_item'>" + roomName + "</li>");
 			closeModal();
 
 			$(".messages_list").empty();
 			//setCurrentRoomMessages()
 
+		}
+		var setRoomActive = function(roomName){
+			[].forEach.call(document.querySelectorAll(".current_rooms_list_item"), function(element) {
+				element.className = "current_rooms_list_item";
+			});
+			$("#"+roomName).attr("class","current_rooms_list_item active");
+			
+		}
+		
+		var setRooms = function(){
+			$.ajax({
+							type: 'GET',
+							url: $(location).attr('origin') + '/chat/{{ .State }}',
+							//contentType: 'application/octet-stream; charset=utf-8',
+							dataType: 'json',
+							success: function(result) {
+								//update room chat
+								if (result){
+									
+									for (var i = 0, len = result.length; i < len; i++) {
+										if(result[i]!="Global"){
+											addNewRoom(result[i]);
+										}
+									}
+								}
+							},
+							processData: false,
+				
+						});
 		}
 
 		var setCurrentRoomMessages = function(){
