@@ -8,20 +8,22 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+
+	"github.com/gorilla/mux"
 )
 
 func AddMessage(w http.ResponseWriter, r *http.Request) {
 	x, _ := ioutil.ReadAll(r.Body)
 
-	state := model.UUID(r.FormValue("state"))
+	vars := mux.Vars(r)
+	state := model.UUID(vars["state"])
+	room := vars["room"]
 
 	user, isAuth := auth.CheckAuth(state)
 	if !isAuth {
-		log.Println("Not authorized!")
+		log.Println("Add Message: Not authorized!")
 		return
 	}
-
-	room := r.FormValue("room")
 
 	message := string(x)
 
@@ -30,15 +32,16 @@ func AddMessage(w http.ResponseWriter, r *http.Request) {
 
 func GetMessages(w http.ResponseWriter, r *http.Request) {
 
-	state := model.UUID(r.FormValue("state"))
+	vars := mux.Vars(r)
+	state := model.UUID(vars["state"])
+	room := vars["room"]
 
 	_, isAuth := auth.CheckAuth(state)
 	if !isAuth {
-		log.Println("Not authorized!")
+		log.Println("Get Messages: Not authorized!")
 		return
 	}
 
-	room := r.FormValue("room")
 	chats, err := repository.GetChatMessages(room)
 	if err != nil {
 		log.Println("Error retrieving chats: ", err)
@@ -49,11 +52,12 @@ func GetMessages(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetRoomNames(w http.ResponseWriter, r *http.Request) {
-	state := model.UUID(r.FormValue("state"))
+	vars := mux.Vars(r)
+	state := model.UUID(vars["state"])
 
 	_, isAuth := auth.CheckAuth(state)
 	if !isAuth {
-		log.Println("Not authorized!")
+		log.Println("Get rooms: Not authorized!")
 		return
 	}
 

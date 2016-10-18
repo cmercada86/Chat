@@ -22,3 +22,31 @@ CREATE TABLE "chat_table"
     CONSTRAINT chat_pkey PRIMARY KEY (uid)
 )
 WITH (OIDS=FALSE);
+
+
+CREATE TABLE "dm_table"
+(
+    uid uuid NOT NULL,
+    sender_id character varying(100) NOT NULL,
+    timestamp date,
+    receiver_id character varying(100) NOT NULL,
+    message character varying(1000) NOT NULL,
+    CONSTRAINT dm_pkey PRIMARY KEY (uid)
+)
+WITH (OIDS=FALSE);
+
+CREATE TRIGGER new_dm AFTER INSERT ON dm_table FOR EACH ROW EXECUTE PROCEDURE table_update_notify();
+
+
+CREATE OR REPLACE FUNCTION table_update_notify() RETURNS trigger AS $$
+BEGIN
+  PERFORM pg_notify('table_update', json_build_object('table', TG_TABLE_NAME,'type', TG_OP,'data',row_to_json(NEW))::text);
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+ `{"uid":"5c26225f-8515-48d8-aa6c-f9140a5dc60b",
+ "user_id":"104356318642505278668",
+ "timestamp":"2016-10-17",
+ "room":"Global",
+ "message":"tesgssdgf"}`

@@ -262,8 +262,10 @@
 		$("#login_button").prop("disabled",true);
 
 		var auth2 = auth2 || {};
+		var sock ={};
 		//var state = '{{ .State }}';
 		var user ={};
+		var users={};
 		// candidate will need to modify the following functions
 		var login = function() {
 			var signIn = function(result) {
@@ -282,7 +284,7 @@
         function(result){
 					console.log(result.code)
           connect(result.code)
-					loginComplete();
+					
         });
     	};
 			//signIn();
@@ -293,18 +295,54 @@
 
 						$.ajax({
 							type: 'POST',
-							url: $(location).attr('origin') + '/connect?state={{ .State }}',
+							url: $(location).attr('origin') + '/connect/{{ .State }}',
 							//contentType: 'application/octet-stream; charset=utf-8',
 							dataType: 'json',
 							success: function(result) {
 								//console.log(result.name);
+								loginComplete();
 								user = result;
-								$("<style type='text/css'> #chat_room .main .messages_window [data-user="+user.name.replace(" ", "_")+"] .avatar { background-image: url("+user.picture+");} </style>").appendTo("head");
+								addUserAvatar(user)
 
+								connectWebSocket()
 							},
 							processData: false,
 							data: code
 						});
+		}
+
+		var addUserAvatar= function(newUser){
+			console.log("Adding new user: ")
+			console.log(newUser)
+			$("<style type='text/css'> #chat_room .main .messages_window [data-user="+newUser.name.replace(" ", "_")+"] .avatar { background-image: url("+user.picture+");} </style>").appendTo("head");
+			users[user.id]=newUser
+		}
+
+		var connectWebSocket = function(){
+			var room = getCurrentRoom();
+
+			wsUrl =$(location).attr('origin') + '/chat/ws/'+encodeURIComponent(room)+'/{{ .State }}';
+			wsUrl = wsUrl.replace("http:", "ws:");
+			console.log(wsUrl)
+			sock = new WebSocket(wsUrl);
+      sock.onmessage = function(e) {
+        //var data = JSON.parse(e.data);
+        //console.log(e.data)
+				var data = JSON.parse(e.data);
+				switch(data.type){
+					case "chat":
+						addMessageToChat(data.message)
+						break;
+					case "dm":
+					
+						break;
+
+				}
+      };
+		}
+
+		var setWebSocketRoom = function(room){
+			sock.send(room)
 		}
 
 		var createRoom = function() {
@@ -313,14 +351,18 @@
 			createRoomComplete();
 		}
 
+		var getCurrentRoom = function(){
+			return $(".current_rooms_list_item.active").html();
+		}
+
 		var submitMessage = function() {
-			  var room = $(".current_rooms_list_item.active").html();
+			  var room = getCurrentRoom();
 				
 				var message = document.getElementById("submit_message_form").querySelector("input").value;
 			  if(message !=""){
 					$.ajax({
 								type: 'POST',
-								url: $(location).attr('origin') + '/chat?room='+encodeURIComponent(room)+'&state={{ .State }}',
+								url: $(location).attr('origin') + '/chat/'+encodeURIComponent(room)+'/{{ .State }}',
 								//contentType: 'application/octet-stream; charset=utf-8',
 								dataType: 'json',
 								success: function(result) {
@@ -358,23 +400,46 @@
 
 		
 		var setCurrentRoomMessages = function(){
-			var room = $(".current_rooms_list_item.active").html();
+			var room = getCurrentRoom();
 			//document.getElementById("chat_room").querySelector(".messages_list")
 			$(".messages_list").empty();
 			$.ajax({
 							type: 'GET',
-							url: $(location).attr('origin') + '/chat?room='+encodeURIComponent(room)+'&state={{ .State }}',
+							url: $(location).attr('origin') + '/chat/'+encodeURIComponent(room)+'/{{ .State }}',
 							//contentType: 'application/octet-stream; charset=utf-8',
 							dataType: 'json',
 							success: function(result) {
 								//update room chat
-								console.log(result)
+								if (result){
+									console.log(result)
+									for (var i = 0, len = result.length; i < len; i++) {
+										addMessageToChat(result[i]);
+									}
+								}
 							},
 							processData: false,
 				
 						});
 		}
 
+
+		var addMessageToChat = function(chat){
+
+			//check users list for avatars, if not included, add to list
+			if(!chat.user.id in users){
+				addUserAvatar(chat.user)
+			}
+
+			document.getElementById("chat_room").querySelector(".messages_list").insertAdjacentHTML("beforeend", 
+				"<li class='messages_list_item' data-user='" + 
+					chat.user.name.replace(" ", "_") + 
+				"'><div class='avatar' ></div><div class='message'>" + 
+					chat.message +
+				"</div><div class='user'>" + 
+					chat.user.name + 
+				"</div></li>"
+			);
+		}
 		var submitMessageComplete = function(message) {
 			
 
@@ -383,15 +448,7 @@
 			//	name: "Candidate X."
 			//}
 
-			document.getElementById("chat_room").querySelector(".messages_list").insertAdjacentHTML("beforeend", 
-				"<li class='messages_list_item' data-user='" + 
-					user.name.replace(" ", "_") + 
-				"'><div class='avatar' ></div><div class='message'>" + 
-					message +
-				"</div><div class='user'>" + 
-					user.name + 
-				"</div></li>"
-			);
+			
 
 			document.getElementById("submit_message_form").querySelector("input").value=""
 		}

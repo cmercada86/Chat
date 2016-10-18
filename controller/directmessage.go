@@ -3,16 +3,20 @@ package controller
 import (
 	"Chat/auth"
 	"Chat/model"
+	"Chat/repository"
 	"encoding/json"
 	"io/ioutil"
 	"log"
 	"net/http"
+
+	"github.com/gorilla/mux"
 )
 
 func SendDirectMessage(w http.ResponseWriter, r *http.Request) {
 	x, _ := ioutil.ReadAll(r.Body)
 
-	state := model.UUID(r.FormValue("state"))
+	vars := mux.Vars(r)
+	state := model.UUID(vars["state"])
 
 	user, isAuth := auth.CheckAuth(state)
 	if !isAuth {
@@ -34,7 +38,8 @@ func SendDirectMessage(w http.ResponseWriter, r *http.Request) {
 }
 
 func ReceiveDirectMessages(w http.ResponseWriter, r *http.Request) {
-	state := model.UUID(r.FormValue("state"))
+	vars := mux.Vars(r)
+	state := model.UUID(vars["state"])
 
 	user, isAuth := auth.CheckAuth(state)
 	if !isAuth {

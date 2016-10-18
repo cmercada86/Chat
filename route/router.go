@@ -4,6 +4,8 @@ import (
 	"Chat/controller"
 	"net/http"
 
+	"golang.org/x/net/websocket"
+
 	"github.com/gorilla/mux"
 )
 
@@ -24,19 +26,19 @@ var routes = []Route{
 	Route{
 		Name:        "connect",
 		Method:      "POST",
-		Pattern:     "/connect",
+		Pattern:     "/connect/{state}",
 		HandlerFunc: controller.Connect,
 	},
 	Route{
 		Name:        "chat",
 		Method:      "POST",
-		Pattern:     "/chat",
+		Pattern:     "/chat/{room}/{state}",
 		HandlerFunc: controller.AddMessage,
 	},
 	Route{
 		Name:        "chat",
 		Method:      "GET",
-		Pattern:     "/chat",
+		Pattern:     "/chat/{room}/{state}",
 		HandlerFunc: controller.GetMessages,
 	},
 }
@@ -52,6 +54,9 @@ func NewRouter() *mux.Router {
 			Name(route.Name).
 			Handler(route.HandlerFunc)
 	}
+
+	router.Handle("/chat/ws/{room}/{state}", websocket.Handler(controller.InitRealTime))
+	//... ListenAndServe, etc)
 
 	return router
 }

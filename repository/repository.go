@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"time"
 
 	_ "github.com/lib/pq"
 )
@@ -15,10 +16,7 @@ const maxConnections = 20
 var db *sql.DB
 
 func NewRepository(user string, pass string, host string) {
-	connectionString := fmt.Sprintf("user=%s password=%s dbname=chat host=%s sslmode=disable ",
-		user,
-		pass,
-		host)
+	connectionString := getConnectionString(user, pass, host)
 
 	var err error
 	db, err = sql.Open("postgres", connectionString)
@@ -47,7 +45,7 @@ func AddOrUpdateUserInfo(user model.User) {
 	query = strings.Replace(query, "$LOCALE", user.Locale, -1)
 
 	if err := db.QueryRow(query).Scan(); err != nil && err != sql.ErrNoRows {
-		log.Println("Error adding or updating user: ", err)
+		log.Println("Error adding or updating user: ", err, query)
 	}
 
 }
@@ -57,35 +55,37 @@ func AddChatMessage(room string, userID string, message string) {
 		`
 		INSERT INTO chat_table (uid, user_id, timestamp,room, message)
 		VALUES (uuid_generate_v4(),'%s',NOW(),'%s','%s')
-
 		;`, userID, room, message)
 
 	if err := db.QueryRow(query).Scan(); err != nil && err != sql.ErrNoRows {
-		log.Println("Error adding or updating user: ", err)
+		log.Println("Error adding or updating chat: ", err, query)
 	}
 	//log.Println("Room: ", room, " Message: ", message)
 }
 
 func GetChatMessages(room string) ([]model.Chat, error) {
 
-	var messages []model.Chat
-	query := fmt.Sprintf("SELECT * FROM chat_table WHERE room='%s';", room)
+	var chats []model.Chat
+	query := fmt.Sprintf(`SELECT * FROM chat_table
+	LEFT OUTER JOIN user_table ON (chat_table.user_id = user_table.id)
+	WHERE room='%s';`, room)
 
 	rows, err := db.Query(query)
 	if err != nil && err != sql.ErrNoRows {
 		//log.Println("Error querying chat_table: ", err)
-		return messages, err
+		return chats, err
 	}
 
 	for rows.Next() {
-		var message model.Chat
-		rows.Scan(&message)
+		chat, err := readChat(rows)
+		if err != nil {
 
-		messages = append(messages, message)
-
+		} else {
+			chats = append(chats, chat)
+		}
 	}
 
-	return messages, nil
+	return chats, nil
 
 }
 
@@ -107,6 +107,62 @@ func GetRoomNames() ([]string, error) {
 	return rooms, nil
 }
 
+func GetUserFromID(userID string) (model.User, error) {
+
+	row := db.QueryRow("SELECT * from user_table WHERE id='" + userID + "';")
+
+	return readUser(row)
+
+}
+
+func InsertDirectMessage(dm model.DirectMessage) {
+
+}
+
+func GetDirectMessages(userID string) ([]model.DirectMessage, error) {
+	return []model.DirectMessage{}, nil
+}
+
 func Close() {
 	db.Close()
+}
+
+func getConnectionString(user string, pass string, host string) string {
+	return fmt.Sprintf("user=%s password=%s dbname=chat host=%s sslmode=disable ",
+		user,
+		pass,
+		host)
+}
+
+func readChat(rows *sql.Rows) (model.Chat, error) {
+	var chat model.Chat
+	var userID string
+	var user model.User
+	var tempDate time.Time
+
+	if err := rows.Scan(&chat.Uid, &userID, &chat.Timestamp, &chat.Room,
+		&chat.Message, &user.ID, &user.Name, &user.FirstName, &user.LastName,
+		&tempDate, &user.Picture, &user.Locale); err != nil {
+		log.Println("Error reading chat: ", err)
+		return chat, err
+	}
+	var err error
+	//chat.User, err = readUser(rows)
+
+	chat.User = user
+
+	return chat, err
+
+}
+
+func readUser(row *sql.Row) (model.User, error) {
+	var user model.User
+	var date time.Time
+	if err := row.Scan(&user.ID, &user.Name, &user.FirstName, &user.LastName,
+		&date, &user.Picture, &user.Locale); err != nil {
+		log.Println("Error reading user: ", err)
+		return user, err
+	}
+
+	return user, nil
 }

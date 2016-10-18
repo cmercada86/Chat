@@ -20,7 +20,7 @@ const (
 
 type ClientInfo struct {
 	ClientID string
-	State    string
+	State    model.UUID
 }
 
 var config = &oauth2.Config{
@@ -56,7 +56,7 @@ func ExchangeAuthCodeForUser(authCode string) (model.User, error) {
 
 }
 
-func CheckAuth(state UUID) (model.User, bool) {
+func CheckAuth(state model.UUID) (model.User, bool) {
 	if !cache.Contains(state) {
 		log.Println("invalid state!")
 		return model.User{}, false

@@ -9,13 +9,16 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+
+	"github.com/gorilla/mux"
 )
 
 func Connect(w http.ResponseWriter, r *http.Request) {
 
 	x, _ := ioutil.ReadAll(r.Body)
 
-	state := model.UUID(r.FormValue("state"))
+	vars := mux.Vars(r)
+	state := model.UUID(vars["state"])
 
 	if !cache.Contains(state) {
 		log.Println("invalid state!")
@@ -26,9 +29,10 @@ func Connect(w http.ResponseWriter, r *http.Request) {
 
 	user, err := auth.ExchangeAuthCodeForUser(authCode)
 	if err != nil {
-
+		log.Println("Error getting Auth code from Google: ", err)
 	}
 
+	log.Println(user.Name, " Logged in!")
 	cache.Set(state, user)
 
 	repository.AddOrUpdateUserInfo(user)

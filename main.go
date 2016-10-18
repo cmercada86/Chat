@@ -20,6 +20,9 @@ func main() {
 	defer cache.Close()
 
 	repository.NewRepository(con.PostgresUser, con.PostgresPass, con.PostgresHost)
+	repository.NewDBtracker(con.PostgresUser, con.PostgresPass, con.PostgresHost)
+
+	go repository.Listen()
 
 	auth.SetOAuth2Config(con.GogClientID, con.GogClientSecret)
 
