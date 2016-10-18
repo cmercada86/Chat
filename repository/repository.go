@@ -111,8 +111,38 @@ func GetUserFromID(userID string) (model.User, error) {
 
 	row := db.QueryRow("SELECT * from user_table WHERE id='" + userID + "';")
 
-	return readUser(row)
+	return readUserRow(row)
 
+}
+
+func GetUsersFromID(userIDs []string) ([]model.User, error) {
+	var users []model.User
+
+	query := "SELECT * FROM user_table WHERE "
+
+	for i, userID := range userIDs {
+		if i > 0 {
+			query += " OR "
+		}
+		query += fmt.Sprintf("id='%s'", userID)
+	}
+
+	rows, err := db.Query(query + ";")
+	if err != nil && err != sql.ErrNoRows {
+		//log.Println("Error querying chat_table: ", err)
+		return users, err
+	}
+
+	for rows.Next() {
+		user, err := readUser(rows)
+		if err != nil {
+			//
+		} else {
+			users = append(users, user)
+		}
+
+	}
+	return users, nil
 }
 
 func InsertDirectMessage(dm model.DirectMessage) {
@@ -155,7 +185,18 @@ func readChat(rows *sql.Rows) (model.Chat, error) {
 
 }
 
-func readUser(row *sql.Row) (model.User, error) {
+func readUser(rows *sql.Rows) (model.User, error) {
+	var user model.User
+	var date time.Time
+	if err := rows.Scan(&user.ID, &user.Name, &user.FirstName, &user.LastName,
+		&date, &user.Picture, &user.Locale); err != nil {
+		log.Println("Error reading user: ", err)
+		return user, err
+	}
+
+	return user, nil
+}
+func readUserRow(row *sql.Row) (model.User, error) {
 	var user model.User
 	var date time.Time
 	if err := row.Scan(&user.ID, &user.Name, &user.FirstName, &user.LastName,

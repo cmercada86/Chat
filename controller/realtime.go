@@ -28,9 +28,24 @@ func InitRealTime(ws *websocket.Conn) {
 		return
 	}
 
-	listener := model.NewListener(user.ID, room)
+	listener := model.NewListener(user, room)
 
 	repository.AddListener(listener)
+
+	users, err := repository.GetCurrentListeners()
+	if err != nil {
+		log.Println("Error getting current users: ", err)
+	} else {
+		for _, curUser := range users {
+			//dont need to send yourself!
+			if curUser.ID != user.ID {
+				websocket.Message.Send(ws, model.ObjectToJsonString(wsMessage{
+					Type:    "user",
+					Message: &curUser,
+				}))
+			}
+		}
+	}
 	//Register listener to db listener
 
 	for i := 0; i < 1440; {

@@ -91,8 +91,6 @@ func Listen() {
 				for listener := range listeners.Iter() {
 					listener.Val.(*model.Listener).ChatChannel <- chat
 				}
-				//SEND TO ALL LISTENERS!!
-			case "user_table":
 			case "dm_table":
 			}
 		case <-stop:
@@ -104,8 +102,30 @@ func Listen() {
 
 }
 
-func AddListener(listener *model.Listener) {
-	listeners.Set(listener.UserID, listener)
+func GetCurrentListeners() ([]model.User, error) {
+	var users []model.User
+	for listener := range listeners.Iter() {
+		user := listener.Val.(*model.Listener).User
+		users = append(users, user)
+	}
+	return users, nil
+
+	//return GetUsersFromID(listeners.Keys())
+}
+
+func AddListener(newListener *model.Listener) {
+	for listener := range listeners.Iter() {
+		listener.Val.(*model.Listener).UserChannel <- newListener.User
+	}
+	listeners.Set(newListener.User.ID, newListener)
+
+}
+func RemoveListener(userID string) {
+	listener, ok := listeners.Get(userID)
+	if ok {
+		listener.(*model.Listener).Close()
+		listeners.Remove(userID)
+	}
 }
 
 func StopTracking() {

@@ -212,6 +212,10 @@
 			  float: right;
 			  width: calc(30% - 12px);
 			}
+			#user_list_item{
+
+			}
+
 		</style>
 	</head>
 	<body>
@@ -252,9 +256,9 @@
 			</div>
 			<ul class="user_list">
 				<div class="header">Chatters</div>
-				<li class="user_list_item">Ricky W.</li>
+				<!--<li class="user_list_item">Ricky W.</li>
 				<li class="user_list_item">Brian W.</li>
-				<li class="user_list_item">Nathan W.</li>
+				<li class="user_list_item">Nathan W.</li>-->
 			</ul>
 		</div>
 	</body>
@@ -265,7 +269,8 @@
 		var sock ={};
 		//var state = '{{ .State }}';
 		var user ={};
-		var users={};
+		var chat_users={};
+
 		// candidate will need to modify the following functions
 		var login = function() {
 			var signIn = function(result) {
@@ -311,12 +316,7 @@
 						});
 		}
 
-		var addUserAvatar= function(newUser){
-			console.log("Adding new user: ")
-			console.log(newUser)
-			$("<style type='text/css'> #chat_room .main .messages_window [data-user="+newUser.name.replace(" ", "_")+"] .avatar { background-image: url("+user.picture+");} </style>").appendTo("head");
-			users[user.id]=newUser
-		}
+		
 
 		var connectWebSocket = function(){
 			var room = getCurrentRoom();
@@ -334,8 +334,9 @@
 						addMessageToChat(data.message)
 						break;
 					case "dm":
-					
+
 						break;
+					case "user":
 
 				}
       };
@@ -346,7 +347,6 @@
 		}
 
 		var createRoom = function() {
-
 		
 			createRoomComplete();
 		}
@@ -398,7 +398,6 @@
 
 		}
 
-		
 		var setCurrentRoomMessages = function(){
 			var room = getCurrentRoom();
 			//document.getElementById("chat_room").querySelector(".messages_list")
@@ -425,8 +424,8 @@
 
 		var addMessageToChat = function(chat){
 
-			//check users list for avatars, if not included, add to list
-			if(!chat.user.id in users){
+			//check chat_chat_users list for avatars, if not included, add to list
+			if(!chat.user.id in chat_users){
 				addUserAvatar(chat.user)
 			}
 
@@ -452,6 +451,18 @@
 
 			document.getElementById("submit_message_form").querySelector("input").value=""
 		}
+
+		var handleUserMessage = function(userMessage){
+			
+		}
+
+		var addUserAvatar= function(newUser){
+			console.log("Adding new user: ")
+			console.log(newUser)
+			$("<style type='text/css'> #chat_room .main .messages_window [data-user="+newUser.name.replace(" ", "_")+"] .avatar { background-image: url("+user.picture+");} </style>").appendTo("head");
+			chat_users[user.id]=newUser
+		}
+
 
 		// candidate can ignore everything below
 		var closeModal = function() {
