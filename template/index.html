@@ -337,6 +337,10 @@
 
 						break;
 					case "user":
+						break;
+					case "room":
+						addNewRoom(data.message)
+						break;
 
 				}
       };
@@ -492,6 +496,10 @@
 			console.log(newUser)
 			$("<style type='text/css'> #chat_room .main .messages_window [data-user="+newUser.name.replace(" ", "_")+"] .avatar { background-image: url("+user.picture+");} </style>").appendTo("head");
 			chat_users[user.id]=newUser
+			
+			$(".user_list").append("<li id='"+newUser.id+"' class='user_list_item' onClick=''>"+newUser.name+"</li>")
+			
+			
 		}
 
 
