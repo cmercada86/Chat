@@ -104,6 +104,33 @@ func Listen() {
 				}
 
 			case "dm_table":
+				var dmWrap dmWrapped
+				if err := json.Unmarshal(notify.Data, &dmWrap); err != nil {
+					log.Println("error unmarshalling chat: ", err)
+				}
+				dm := model.DirectMessage{
+					Uid:       dmWrap.Uid,
+					Timestamp: dmWrap.Timestamp.Time,
+					Message:   dmWrap.Message,
+					Seen:	dmWrap.Seen,
+				}
+				
+
+				sender, err := GetUserFromID(dm.SenderID)
+				if err != nil {
+					log.Println("Error getting user: ", err)
+				} else {
+					dm.Sender = sender
+				}
+				receiver, err := GetUserFromID(dm.ReceiverID)
+				if err != nil {
+					log.Println("Error getting user: ", err)
+				} else {
+					dm.Receiver = receiver
+				}
+				for listener := range listeners.Iter() {
+					listener.Val.(*model.Listener).DMchannel <- chat
+				}
 			}
 		case <-stop:
 			db_listener.Close()
