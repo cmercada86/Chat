@@ -129,7 +129,9 @@ func Listen() {
 					dm.Receiver = receiver
 				}
 				for listener := range listeners.Iter() {
-					listener.Val.(*model.Listener).DMchannel <- chat
+					if listener.Val.(*model.Listener).User.ID==receiver.ID{
+						listener.Val.(*model.Listener).DMchannel <- dm
+					}
 				}
 			}
 		case <-stop:
