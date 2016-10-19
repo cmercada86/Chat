@@ -20,13 +20,12 @@ type wsMessage struct {
 var room string
 
 func InitRealTime(ws *websocket.Conn) {
+
 	vars := mux.Vars(ws.Request())
 	state := model.UUID(vars["state"])
-	room = vars["room"]
-	log.Println(state, room)
 	user, isAuth := auth.CheckAuth(state)
 	if !isAuth {
-		log.Println("Web socket:Not authorized!")
+
 		return
 	}
 

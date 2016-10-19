@@ -6,7 +6,6 @@ import (
 	"Chat/repository"
 	"encoding/json"
 	"io/ioutil"
-	"log"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -21,7 +20,7 @@ func AddMessage(w http.ResponseWriter, r *http.Request) {
 
 	user, isAuth := auth.CheckAuth(state)
 	if !isAuth {
-		log.Println("Add Message: Not authorized!")
+		errorHandler(w, r, 403, "Not Authorized!")
 		return
 	}
 
@@ -38,13 +37,13 @@ func GetMessages(w http.ResponseWriter, r *http.Request) {
 
 	_, isAuth := auth.CheckAuth(state)
 	if !isAuth {
-		log.Println("Get Messages: Not authorized!")
+		errorHandler(w, r, 403, "Not Authorized!")
 		return
 	}
 
 	chats, err := repository.GetChatMessages(room)
 	if err != nil {
-		log.Println("Error retrieving chats: ", err)
+		errorHandler(w, r, 500, "")
 		return
 	}
 
@@ -57,16 +56,15 @@ func GetRoomNames(w http.ResponseWriter, r *http.Request) {
 
 	_, isAuth := auth.CheckAuth(state)
 	if !isAuth {
-		log.Println("Get rooms: Not authorized!")
+		errorHandler(w, r, 403, "Not Authorized!")
 		return
 	}
 
 	rooms, err := repository.GetRoomNames()
 	if err != nil {
-		log.Println("Error retrieving chats: ", err)
+		errorHandler(w, r, 500, "")
 		return
 	}
-	log.Println(rooms)
 
 	json.NewEncoder(w).Encode(rooms)
 }

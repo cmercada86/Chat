@@ -36,7 +36,7 @@ var routes = []Route{
 		HandlerFunc: controller.AddMessage,
 	},
 	Route{
-		Name:        "chat",
+		Name:        "getchats",
 		Method:      "GET",
 		Pattern:     "/chat/{room}/{state}",
 		HandlerFunc: controller.GetMessages,
@@ -47,10 +47,18 @@ var routes = []Route{
 		Pattern:     "/rooms/{state}",
 		HandlerFunc: controller.GetRoomNames,
 	},
+	Route{
+		Name:        "dm",
+		Method:      "POST",
+		Pattern:     "/dm/{receiver_id}/{state}",
+		HandlerFunc: controller.SendDirectMessage,
+	},
 }
 
 func NewRouter() *mux.Router {
 	router := mux.NewRouter().StrictSlash(true)
+
+	router.Handle("/chat/ws/{state}", websocket.Handler(controller.InitRealTime))
 
 	for _, route := range routes {
 
@@ -61,7 +69,6 @@ func NewRouter() *mux.Router {
 			Handler(route.HandlerFunc)
 	}
 
-	router.Handle("/chat/ws/{room}/{state}", websocket.Handler(controller.InitRealTime))
 	//... ListenAndServe, etc)
 
 	return router

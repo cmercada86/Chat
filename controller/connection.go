@@ -21,7 +21,7 @@ func Connect(w http.ResponseWriter, r *http.Request) {
 	state := model.UUID(vars["state"])
 
 	if !cache.Contains(state) {
-		log.Println("invalid state!")
+		errorHandler(w, r, 403, "Invalid State")
 		return
 	}
 	//get auth code	string
@@ -30,9 +30,13 @@ func Connect(w http.ResponseWriter, r *http.Request) {
 	user, isPlusUser, err := auth.ExchangeAuthCodeForUser(authCode)
 	if err != nil {
 		log.Println("Error getting Auth code from Google: ", err)
+		errorHandler(w, r, 403, "Could not get user id from Google")
+		return
 	}
 	if !isPlusUser {
 		//SEND UNAUTH
+		errorHandler(w, r, 403, "Must be a Google+ user!")
+		return
 	}
 
 	log.Println(user.Name, " Logged in!")

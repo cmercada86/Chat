@@ -3,8 +3,10 @@
 <html>
 	<head>
 		<title>Grow developer test</title>
-<script src="https://apis.google.com/js/client:plusone.js?onload=startApp" async defer></script>
-<script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js" ></script>
+		<script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js" ></script>
+		<script src="https://apis.google.com/js/client:plusone.js"></script>
+<!--<script src="static/js/client_plusone.js"></script>-->
+
 		<meta name="description" content="Grow developer test" />
 		<style>
 			body {
@@ -212,10 +214,15 @@
 			  float: right;
 			  width: calc(30% - 12px);
 			}
-			#user_list_item{
+			#user_list_item {
 
 			}
+			#user_list_item li.clickable .text{
+				visibility:hidden;
+			}
+			#directMessage{
 
+			}
 		</style>
 	</head>
 	<body>
@@ -227,6 +234,13 @@
 			<form id="create_room_form">
 				<input type="text" placeholder="Enter room name">
 				<button type="submit" id="create_room_button">Create</button>
+			</form>
+		</div>
+		<div class="hidden" id="modal_send_direct">
+			<form id="send_direct_form">
+				<input type="hidden" id="receiver">
+				<input type="text" placeholder="Message">
+				<button type="submit" id="send_direct_button">Create</button>
 			</form>
 		</div>
 		<div class="hidden" id="chat_room">
@@ -264,7 +278,8 @@
 	</body>
 	<script>
 
-		console.log("here")
+		window.onload=startApp;
+
 		$("#login_button").prop("disabled",true);
 
 		var auth2 = auth2 || {};
@@ -309,9 +324,12 @@
 								//console.log(result.name);
 								loginComplete();
 								user = result;
-								addUserAvatar(user)
+								addUser(user)
 
 								connectWebSocket()
+							},
+							error:function (xhr, ajaxOptions, thrownError){
+								alert(xhr.status+" "+xhr.statusText+" "+xhr.responseText)
 							},
 							processData: false,
 							data: code
@@ -321,9 +339,8 @@
 		
 
 		var connectWebSocket = function(){
-			var room = getCurrentRoom();
 
-			wsUrl =$(location).attr('origin') + '/chat/ws/'+encodeURIComponent(room)+'/{{ .State }}';
+			wsUrl =$(location).attr('origin') + '/chat/ws/{{ .State }}';
 			wsUrl = wsUrl.replace("http:", "ws:");
 			console.log(wsUrl)
 			sock = new WebSocket(wsUrl);
@@ -333,33 +350,37 @@
 				var data = JSON.parse(e.data);
 				switch(data.type){
 					case "chat":
-					  
 						addMessageToChat(data.message)
 						break;
 					case "dm":
 
 						break;
 					case "user":
+					 	newUser=data.message
+						if(!chatUsersContainID(newUser.id)){
+							addUser(newUser)
+						}
 						break;
 					case "room":
-						addNewRoom(data.message)
+						if (!roomExists){
+							addNewRoom(data.message)
+						}
 						break;
 
 				}
       };
 		}
 
-		var setWebSocketRoom = function(room){
-			sock.send(room)
-		}
 
 		var createRoom = function() {
 			var roomName = document.getElementById("create_room_form").querySelector("input").value;
-			addNewRoom(roomName);
-			//Set to active!
-			setRoomActive(roomName);
-			
-			
+			document.getElementById("create_room_form").querySelector("input").value="";
+			if (!roomExists){
+				addNewRoom(roomName);
+				//Set to active!
+				setRoomActive(roomName);
+			}
+			closeModal();
 		}
 
 		var getCurrentRoom = function(){
@@ -385,6 +406,27 @@
 				}
 			
 		}
+		var sendDirectMessage = function(){
+			
+			//var message = document.getElementById("send_direct_form").querySelector("input").value;
+			var message= $("#send_direct_form input[type=text]").val()
+			var receiverID =  $("#send_direct_form #receiver").val()
+
+			if (message!=""){
+					$.ajax({
+								type: 'POST',
+								url: $(location).attr('origin') + '/dm/'+receiverID+'/{{ .State }}',
+								//contentType: 'application/octet-stream; charset=utf-8',
+								dataType: 'json',
+								success: function(result) {
+									//submitMessageComplete(message);
+								},
+								processData: false,
+								data: message
+							});
+			}
+			closeModal()
+		}
 
 		// candididate will call the following functions
 		var loginComplete = function() {
@@ -405,6 +447,14 @@
 			//setCurrentRoomMessages()
 
 		}
+
+		$(".user_list").on("click","li",function(){
+			id=$(this).attr('id');
+			console.log(id)
+			$("#send_direct_form #receiver").val(id)
+			launchModal("send_direct");
+
+		});
 		$(".current_rooms_list").on('click','li',function(){
 			id=$(this).attr('id');
 			if (id!="create_new_room"){
@@ -474,14 +524,20 @@
 			}
 			return false
 		}
+		var roomExists=function(room){
+			for(var r in rooms){
+				if (room==r){
+					return true
+				}
+			}
+			return false
+		}
 
 		var addMessageToChat = function(chat){
 
 			//check chat_chat_users list for avatars, if not included, add to list
 			if(!chatUsersContainID(chat.user.id)){
-				addUserAvatar(chat.user)
-			}else{
-				console.log("user already in list: "+chat.user.name)
+				addUser(chat.user)
 			}
 
 			if (getCurrentRoom()!=chat.room){
@@ -503,31 +559,32 @@
 		}
 		var submitMessageComplete = function(message) {
 			
-
-			// stub
-			//var user = {
-			//	name: "Candidate X."
-			//}
-
-			
-
 			document.getElementById("submit_message_form").querySelector("input").value=""
 		}
 
-		var handleUserMessage = function(userMessage){
-			
-		}
+	
 
-		var addUserAvatar= function(newUser){
+		var addUser= function(newUser){
 			console.log("Adding new user: ");
 			console.log(newUser);
 			$("<style type='text/css'> #chat_room .main .messages_window [data-user="+newUser.name.replace(" ", "_")+"] .avatar { background-image: url("+newUser.picture+");} </style>").appendTo("head");
 			chat_users[newUser.id]=newUser;
 			
-			$(".user_list").append("<li id='"+newUser.id+"' class='user_list_item' onClick=''>"+newUser.name+"</li>");
+			classStuff="class='user_list_item'";
+			if(newUser.id!=user.id){
+				$(".user_list").append("<li id='"+newUser.id+"' class='user_list_item clickable'><a title='Send Direct Message' class='directMessage' href='javascript:void(0)'>"+newUser.name+"</a></li>");
+			}
+			else{
+				$(".user_list").append("<li id='"+newUser.id+"' class='user_list_item'>"+newUser.name+"</li>");
+			}
 			
 			
 		}
+
+		$('.directMessage').click(function(e) {
+    	e.preventDefault();
+  
+		});
 
 
 		// candidate can ignore everything below
@@ -543,6 +600,7 @@
 
 		document.getElementById("login_button").addEventListener("click", login);
 		document.getElementById("create_room_button").addEventListener("click", createRoom);
+		document.getElementById("send_direct_button").addEventListener("click", sendDirectMessage);
 		document.getElementById("create_new_room").addEventListener("click", launchModal.bind(this, "create_room"));
 		document.getElementById("shadow_cover").addEventListener("click", closeModal);
 		document.getElementById("submit_message_button").addEventListener("click", submitMessage);

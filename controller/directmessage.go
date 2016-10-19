@@ -17,22 +17,27 @@ func SendDirectMessage(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
 	state := model.UUID(vars["state"])
+	receiverID := vars["receiver_id"]
 
 	user, isAuth := auth.CheckAuth(state)
 	if !isAuth {
-		log.Println("Not authorized!")
+		errorHandler(w, r, 404, "Not Authorized")
 		return
 	}
 
-	var dm model.DirectMessage
-
-	if err := json.Unmarshal(x, &dm); err != nil {
-		log.Println("Unable to unmarshal direct message: ", err)
+	message := string(x)
+	dm := model.DirectMessage{
+		SenderID:   user.ID,
+		ReceiverID: receiverID,
+		Message:    message,
+		Seen:       false,
 	}
 
-	if user.ID != dm.SenderID {
-		//
+	//dont want to send message to yourself!
+	if user.ID == receiverID {
+		return
 	}
+	log.Println(dm)
 
 	repository.InsertDirectMessage(dm)
 }
@@ -43,13 +48,13 @@ func ReceiveDirectMessages(w http.ResponseWriter, r *http.Request) {
 
 	user, isAuth := auth.CheckAuth(state)
 	if !isAuth {
-		log.Println("Not authorized!")
+		errorHandler(w, r, 404, "Not Authorized")
 		return
 	}
 
 	dms, err := repository.GetDirectMessages(user.ID)
 	if err != nil {
-		log.Println("Error retrieving dms: ", err)
+		errorHandler(w, r, 500, "")
 		return
 	}
 
