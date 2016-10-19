@@ -26,20 +26,14 @@ func SendDirectMessage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	message := string(x)
-	dm := model.DirectMessage{
-		SenderID:   user.ID,
-		ReceiverID: receiverID,
-		Message:    message,
-		Seen:       false,
-	}
+	
 
 	//dont want to send message to yourself!
 	if user.ID == receiverID {
 		return
 	}
-	log.Println(dm)
 
-	repository.InsertDirectMessage(dm)
+	repository.InsertDirectMessage(user.ID,receiverID, message)
 }
 
 func ReceiveDirectMessages(w http.ResponseWriter, r *http.Request) {
