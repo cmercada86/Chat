@@ -16,8 +16,8 @@ type Chat struct {
 type DirectMessage struct {
 	Uid        UUID
 	Timestamp  time.Time `json:"timestamp"`
-	SenderID   string    `json:"sender_id"`
-	ReceiverID string    `json:"receiver_id"`
+	Sender   User    `json:"sender"`
+	Receiver User    `json:"receiver"`
 	Message    string    `json:"message"`
 	Seen       bool      `json:"seen"`
 }
