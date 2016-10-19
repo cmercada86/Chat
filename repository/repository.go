@@ -145,8 +145,16 @@ func GetUsersFromID(userIDs []string) ([]model.User, error) {
 	return users, nil
 }
 
-func InsertDirectMessage(dm model.DirectMessage) {
+func InsertDirectMessage(senderID string, receiverID string, message string) {
+	query := fmt.Sprintf(
+		`
+		INSERT INTO dm_table (uid, sender_id, timestamp,receiver_id, message)
+		VALUES (uuid_generate_v4(),'%s',NOW(),'%s','%s')
+		;`, senderID, receiver, message)
 
+	if err := db.QueryRow(query).Scan(); err != nil && err != sql.ErrNoRows {
+		log.Println("Error adding or updating chat: ", err, query)
+	}
 }
 
 func GetDirectMessages(userID string) ([]model.DirectMessage, error) {
