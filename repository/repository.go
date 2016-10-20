@@ -11,6 +11,15 @@ import (
 	_ "github.com/lib/pq"
 )
 
+type MessageStatus int
+
+const (
+	New MessageStatus = iota
+	Seen
+	All
+	StatusError
+)
+
 const maxConnections = 20
 
 var db *sql.DB
@@ -67,7 +76,7 @@ func GetChatMessages(room string) ([]model.Chat, error) {
 
 	var chats []model.Chat
 	query := fmt.Sprintf(`SELECT * FROM chat_table
-	LEFT OUTER JOIN user_table ON (chat_table.user_id = user_table.id)
+	JOIN user_table ON (chat_table.user_id = user_table.id)
 	WHERE room='%s';`, room)
 
 	rows, err := db.Query(query)
@@ -148,17 +157,71 @@ func GetUsersFromID(userIDs []string) ([]model.User, error) {
 func InsertDirectMessage(senderID string, receiverID string, message string) {
 	query := fmt.Sprintf(
 		`
-		INSERT INTO dm_table (uid, sender_id, timestamp,receiver_id, message)
-		VALUES (uuid_generate_v4(),'%s',NOW(),'%s','%s')
-		;`, senderID, receiver, message)
+		INSERT INTO dm_table (uid, sender_id, timestamp,receiver_id, message,seen)
+		VALUES (uuid_generate_v4(),'%s',NOW(),'%s','%s',false)
+		;`, senderID, receiverID, message)
 
 	if err := db.QueryRow(query).Scan(); err != nil && err != sql.ErrNoRows {
 		log.Println("Error adding or updating chat: ", err, query)
 	}
 }
 
-func GetDirectMessages(userID string) ([]model.DirectMessage, error) {
-	return []model.DirectMessage{}, nil
+func GetDirectMessages(receiverID string, status MessageStatus) ([]model.DirectMessage, error) {
+	var dms []model.DirectMessage
+	query := fmt.Sprintf(`SELECT * FROM dm_table as dms
+	 JOIN user_table as send_user ON (dms.sender_id = send_user.id)
+	 JOIN user_table as receive_user ON (dms.receiver_id = receive_user.id)
+	WHERE receiver_id='%s'`, receiverID)
+
+	if status == New || status == Seen {
+		query = fmt.Sprintf("%s AND seen=%v;", query, status == Seen)
+	} else {
+		query += ";"
+	}
+
+	rows, err := db.Query(query)
+	if err != nil && err != sql.ErrNoRows {
+		//log.Println("Error querying chat_table: ", err)
+		return dms, err
+	}
+
+	for rows.Next() {
+		dm, err := readDM(rows)
+		if err != nil {
+
+		} else {
+			dms = append(dms, dm)
+		}
+	}
+
+	return dms, nil
+}
+
+func SetDirectMessageSeen(dmID string) {
+	query := fmt.Sprintf(
+		`
+		UPDATE dm_table 
+		SET seen = true
+		WHERE uid='%s'
+		;`, dmID)
+
+	if err := db.QueryRow(query).Scan(); err != nil && err != sql.ErrNoRows {
+		log.Println("Error adding or updating dm: ", err, query)
+	}
+}
+
+func GetMessageStatusFromString(status string) MessageStatus {
+	switch status {
+	case "New":
+		return New
+	case "Seen":
+		return Seen
+	case "All":
+		return All
+	default:
+		return StatusError
+	}
+
 }
 
 func Close() {
@@ -173,23 +236,49 @@ func getConnectionString(user string, pass string, host string) string {
 }
 
 func readChat(rows *sql.Rows) (model.Chat, error) {
+	var uuid []byte
 	var chat model.Chat
 	var userID string
 	var user model.User
 	var tempDate time.Time
 
-	if err := rows.Scan(&chat.Uid, &userID, &chat.Timestamp, &chat.Room,
+	if err := rows.Scan(&uuid, &userID, &chat.Timestamp, &chat.Room,
 		&chat.Message, &user.ID, &user.Name, &user.FirstName, &user.LastName,
 		&tempDate, &user.Picture, &user.Locale); err != nil {
 		log.Println("Error reading chat: ", err)
 		return chat, err
 	}
-	var err error
+	chat.Uid = string(uuid)
+
 	//chat.User, err = readUser(rows)
 
 	chat.User = user
 
-	return chat, err
+	return chat, nil
+
+}
+
+func readDM(rows *sql.Rows) (model.DirectMessage, error) {
+	var uuid []byte
+	var dm model.DirectMessage
+	var sendID string
+	var receiveID string
+	var sender model.User
+	var receiver model.User
+	var tempDate time.Time
+	if err := rows.Scan(&uuid, &sendID, &dm.Timestamp, &receiveID,
+		&dm.Message, &dm.Seen, &sender.ID, &sender.Name, &sender.FirstName, &sender.LastName,
+		&tempDate, &sender.Picture, &sender.Locale, &receiver.ID, &receiver.Name,
+		&receiver.FirstName, &receiver.LastName, &tempDate, &receiver.Picture, &receiver.Locale,
+	); err != nil {
+		log.Println("Error reading chat: ", err)
+		return dm, err
+	}
+	dm.Uid = string(uuid)
+	dm.Sender = sender
+	dm.Receiver = receiver
+
+	return dm, nil
 
 }
 

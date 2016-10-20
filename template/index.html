@@ -5,6 +5,8 @@
 		<title>Grow developer test</title>
 		<script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js" ></script>
 		<script src="https://apis.google.com/js/client:plusone.js"></script>
+		<script src="//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+		<link href="//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" rel="stylesheet" type="text/css" />
 <!--<script src="static/js/client_plusone.js"></script>-->
 
 		<meta name="description" content="Grow developer test" />
@@ -220,7 +222,7 @@
 			#user_list_item li.clickable .text{
 				visibility:hidden;
 			}
-			#directMessage{
+			#respondButton{
 
 			}
 		</style>
@@ -240,7 +242,7 @@
 			<form id="send_direct_form">
 				<input type="hidden" id="receiver">
 				<input type="text" placeholder="Message">
-				<button type="submit" id="send_direct_button">Create</button>
+				<button type="submit" id="send_direct_button">Send</button>
 			</form>
 		</div>
 		<div class="hidden" id="chat_room">
@@ -279,6 +281,24 @@
 	<script>
 
 		window.onload=startApp;
+
+		toastr.options = {
+			"closeButton": true,
+			"debug": false,
+			"newestOnTop": false,
+			"progressBar": false,
+			"positionClass": "toast-bottom-right",
+			"preventDuplicates": true,
+			"showDuration": "300",
+			"hideDuration": "1000",
+			"timeOut": 0,
+			"extendedTimeOut": 0,
+			"showEasing": "swing",
+			"hideEasing": "linear",
+			"showMethod": "fadeIn",
+			"hideMethod": "fadeOut",
+			"tapToDismiss": false
+		}
 
 		$("#login_button").prop("disabled",true);
 
@@ -321,12 +341,14 @@
 							//contentType: 'application/octet-stream; charset=utf-8',
 							dataType: 'json',
 							success: function(result) {
-								//console.log(result.name);
-								loginComplete();
 								user = result;
 								addUser(user)
 
-								connectWebSocket()
+								//console.log(result.name);
+								loginComplete();
+								
+								
+								
 							},
 							error:function (xhr, ajaxOptions, thrownError){
 								alert(xhr.status+" "+xhr.statusText+" "+xhr.responseText)
@@ -350,20 +372,20 @@
 				var data = JSON.parse(e.data);
 				switch(data.type){
 					case "chat":
-						addMessageToChat(data.message)
+						addMessageToChat(data.message);
 						break;
 					case "dm":
-
+						displayDM(data.message);
 						break;
 					case "user":
 					 	newUser=data.message
 						if(!chatUsersContainID(newUser.id)){
-							addUser(newUser)
+							addUser(newUser);
 						}
 						break;
 					case "room":
 						if (!roomExists){
-							addNewRoom(data.message)
+							addNewRoom(data.message);
 						}
 						break;
 
@@ -425,7 +447,9 @@
 								data: message
 							});
 			}
+
 			closeModal()
+			$("#send_direct_form input[type=text]").val("")
 		}
 
 		// candididate will call the following functions
@@ -435,6 +459,10 @@
 
 			setRooms();		
 			setCurrentRoomMessages();
+
+			getDirectMessages();
+
+			connectWebSocket();
 		}
 
 		var addNewRoom = function(roomName) {
@@ -505,9 +533,31 @@
 							success: function(result) {
 								//update room chat
 								if (result){
-									console.log(result)
+							
 									for (var i = 0, len = result.length; i < len; i++) {
 										addMessageToChat(result[i]);
+									}
+								}
+							},
+							processData: false,
+				
+						});
+		}
+
+		var getDirectMessages = function(){
+		
+			$.ajax({
+							type: 'GET',
+							url: $(location).attr('origin') + '/dm/New/{{ .State }}',
+							//contentType: 'application/octet-stream; charset=utf-8',
+							dataType: 'json',
+							success: function(result) {
+								//update room chat
+								if (result){
+								
+									for (var i = 0, len = result.length; i < len; i++) {
+										displayDM(result[i]);
+										//addMessageToChat(result[i]);
 									}
 								}
 							},
@@ -557,6 +607,29 @@
 				"</div></li>"
 			);
 		}
+
+		var displayDM = function(dm){
+			console.log(dm);
+			toastr["info"]("From: "+dm.sender.name+"<br />Sent:"+dm.timestamp+"<br />Message:<br /><br />"+
+				dm.message, "Private Message")
+
+			setDMseen(dm)
+		}
+
+		var setDMseen = function(dm){
+			$.ajax({
+								type: 'POST',
+								url: $(location).attr('origin') + '/dm/update/'+dm.uuid+'/{{ .State }}',
+								//contentType: 'application/octet-stream; charset=utf-8',
+							//	dataType: 'json',
+								success: function(result) {
+									//submitMessageComplete(message);
+								},
+								processData: false,
+								//data: message
+							});
+		}
+
 		var submitMessageComplete = function(message) {
 			
 			document.getElementById("submit_message_form").querySelector("input").value=""

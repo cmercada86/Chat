@@ -48,10 +48,22 @@ var routes = []Route{
 		HandlerFunc: controller.GetRoomNames,
 	},
 	Route{
-		Name:        "dm",
+		Name:        "sendDM",
 		Method:      "POST",
 		Pattern:     "/dm/{receiver_id}/{state}",
 		HandlerFunc: controller.SendDirectMessage,
+	},
+	Route{
+		Name:        "getDMs",
+		Method:      "GET",
+		Pattern:     "/dm/{status}/{state}",
+		HandlerFunc: controller.GetDirectMessages,
+	},
+	Route{
+		Name:        "updateDM",
+		Method:      "POST",
+		Pattern:     "/dm/update/{message_id}/{state}",
+		HandlerFunc: controller.SetMessageSeen,
 	},
 }
 

@@ -27,14 +27,14 @@ type Time struct {
 
 //for unmarshalling correct dt from postgres
 type chatWrapped struct {
-	Uid       []uint8 `json:"uuid"`
-	Timestamp Time    `json:"timestamp"`
-	UserID    string  `json:"user_id"`
-	Room      string  `json:"room"`
-	Message   string  `json:"message"`
+	Uid       string `json:"uid"`
+	Timestamp Time   `json:"timestamp"`
+	UserID    string `json:"user_id"`
+	Room      string `json:"room"`
+	Message   string `json:"message"`
 }
 type dmWrapped struct {
-	Uid        model.UUID
+	Uid        string `json:"uid"`
 	Timestamp  Time   `json:"timestamp"`
 	SenderID   string `json:"sender_id"`
 	ReceiverID string `json:"receiver_id"`
@@ -74,9 +74,11 @@ func Listen() {
 			switch notify.Table {
 			case "chat_table":
 				var chatWrap chatWrapped
+
 				if err := json.Unmarshal(notify.Data, &chatWrap); err != nil {
 					log.Println("error unmarshalling chat: ", err)
 				}
+
 				chat := model.Chat{
 					Uid:       chatWrap.Uid,
 					Timestamp: chatWrap.Timestamp.Time,
@@ -106,30 +108,29 @@ func Listen() {
 			case "dm_table":
 				var dmWrap dmWrapped
 				if err := json.Unmarshal(notify.Data, &dmWrap); err != nil {
-					log.Println("error unmarshalling chat: ", err)
+					log.Println("error unmarshalling dm: ", err)
 				}
 				dm := model.DirectMessage{
 					Uid:       dmWrap.Uid,
 					Timestamp: dmWrap.Timestamp.Time,
 					Message:   dmWrap.Message,
-					Seen:	dmWrap.Seen,
+					Seen:      dmWrap.Seen,
 				}
-				
 
-				sender, err := GetUserFromID(dm.SenderID)
+				sender, err := GetUserFromID(dmWrap.SenderID)
 				if err != nil {
 					log.Println("Error getting user: ", err)
 				} else {
 					dm.Sender = sender
 				}
-				receiver, err := GetUserFromID(dm.ReceiverID)
+				receiver, err := GetUserFromID(dmWrap.ReceiverID)
 				if err != nil {
 					log.Println("Error getting user: ", err)
 				} else {
 					dm.Receiver = receiver
 				}
 				for listener := range listeners.Iter() {
-					if listener.Val.(*model.Listener).User.ID==receiver.ID{
+					if listener.Val.(*model.Listener).User.ID == receiver.ID {
 						listener.Val.(*model.Listener).DMchannel <- dm
 					}
 				}
