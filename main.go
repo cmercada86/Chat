@@ -31,6 +31,7 @@ func main() {
 	router := route.NewRouter()
 	//http.HandleFunc("/connect", connect)
 	//http.HandleFunc("/", index)
+	log.Println("Starting to listen on 8080")
 
 	if err := http.ListenAndServe(":8080", router); err != nil {
 		log.Fatal("Listen failed: ", err)
