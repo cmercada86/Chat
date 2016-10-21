@@ -60,13 +60,13 @@ func AddOrUpdateUserInfo(user model.User) {
 }
 
 func AddChatMessage(room string, userID string, message string) {
-	query := fmt.Sprintf(
+	query :=
 		`
 		INSERT INTO chat_table (uid, user_id, timestamp,room, message)
-		VALUES (uuid_generate_v4(),'%s',NOW(),'%s','%s')
-		;`, userID, room, message)
+		VALUES (uuid_generate_v4(),$1,NOW(),$2,$3)
+		;`
 
-	if err := db.QueryRow(query).Scan(); err != nil && err != sql.ErrNoRows {
+	if err := db.QueryRow(query, userID, room, message).Scan(); err != nil && err != sql.ErrNoRows {
 		log.Println("Error adding or updating chat: ", err, query)
 	}
 	//log.Println("Room: ", room, " Message: ", message)
@@ -155,13 +155,13 @@ func GetUsersFromID(userIDs []string) ([]model.User, error) {
 }
 
 func InsertDirectMessage(senderID string, receiverID string, message string) {
-	query := fmt.Sprintf(
+	query :=
 		`
 		INSERT INTO dm_table (uid, sender_id, timestamp,receiver_id, message,seen)
-		VALUES (uuid_generate_v4(),'%s',NOW(),'%s','%s',false)
-		;`, senderID, receiverID, message)
+		VALUES (uuid_generate_v4(),$1,NOW(),$2,$3,false)
+		;`
 
-	if err := db.QueryRow(query).Scan(); err != nil && err != sql.ErrNoRows {
+	if err := db.QueryRow(query, senderID, receiverID, message).Scan(); err != nil && err != sql.ErrNoRows {
 		log.Println("Error adding or updating chat: ", err, query)
 	}
 }
