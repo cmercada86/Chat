@@ -50,3 +50,10 @@ $$ LANGUAGE plpgsql;
  "timestamp":"2016-10-17",
  "room":"Global",
  "message":"tesgssdgf"}`
+
+
+
+        SELECT user.id,COALESCE(to_char(chat.timestamp, 'MM-DD-YYYY HH24:MI:SS'), ''),chat.room,chat.message,
+        , user.name, user.picture
+        FROM chat_table as chat
+        JOIN user_table as user ON (chat_table.user_id = user_table.id)

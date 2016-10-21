@@ -4,5 +4,9 @@
     "redis_url":"54.174.139.95:6379",
     "postgres_host":"54.174.139.95",
     "postgres_user":"postgres",
-    "postgres_pass":"GrowChat!"
+    "postgres_pass":"GrowChat!",
+    "search_url":"127.0.0.1:1234"
+
 }
+
+

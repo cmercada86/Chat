@@ -3,8 +3,9 @@ package controller
 import (
 	"Chat/auth"
 	"Chat/model"
+	"Chat/repository"
+	"encoding/json"
 	"io/ioutil"
-	"log"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -22,8 +23,13 @@ func SearchChats(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	searchString := string(x)
+	chats, err := repository.SearchChat(room, searchString)
+	if err != nil {
 
-	log.Println(room, searchString)
+		errorHandler(w, r, 500, "")
+		return
+	}
+
 	//Call lambda python script to search chats
-
+	json.NewEncoder(w).Encode(chats)
 }

@@ -22,6 +22,8 @@ func main() {
 	repository.NewRepository(con.PostgresUser, con.PostgresPass, con.PostgresHost)
 	repository.NewDBtracker(con.PostgresUser, con.PostgresPass, con.PostgresHost)
 
+	repository.SetSearchUrl(con.SearchURL)
+
 	go repository.Listen()
 
 	auth.SetOAuth2Config(con.GogClientID, con.GogClientSecret)

@@ -162,6 +162,7 @@
 			  overflow: scroll;
 			  height: 100%;
 			}
+		
 			#chat_room .main .messages_window .messages_list_item {
 			  white-space: nowrap;
 			  position: relative;
@@ -178,6 +179,7 @@
 			  display: inline-block;
 			  vertical-align: top;
 			}
+			
 			#chat_room .main .messages_window .messages_list_item .user {
 			  font-style: italic;
 			  color: #9a9089;
@@ -193,6 +195,8 @@
 			#chat_room .main .messages_window .messages_list_item:not(:last-of-type) {
 			  margin-bottom: 25px;
 			}
+
+
 			#chat_room .main .messages_window [data-user="Ricky"] .avatar {
 			  background-image: url("https://lh3.googleusercontent.com/-zoJpQbS_9J4/AAAAAAAAAAI/AAAAAAAAAB8/hnGrLLKheU4/s46-c-k-no/photo.jpg");
 			}
@@ -225,6 +229,42 @@
 			#respondButton{
 
 			}
+			#search_messages  .messages_window {
+			  background: white;
+			  padding: 30px;
+			  border-top: solid 3px #b25538;
+			  box-shadow: 0 0 0 -1px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.1);
+			  height: 60vh;
+				text-align: left;
+			}
+			#search_messages  .messages_window ul {
+			  overflow: scroll;
+			  height: 100%;
+			}
+		
+			#search_messages  .messages_window .messages_list_item {
+			  white-space: nowrap;
+			  position: relative;
+			}
+			
+			#search_messages  .messages_window .messages_list_item .message {
+
+			  vertical-align: top;
+			}
+			
+			#search_messages  .messages_window .messages_list_item .user {
+			  font-style: italic;
+			  color: #9a9089;
+			  font-size: 12px;
+			  margin-left: 25px;
+			}
+			#search_messages  .messages_window .messages_list_item .message {
+			  width: calc(100% - 40px);
+			  padding-left: 25px;
+			  white-space: normal;
+			  margin-bottom: 5px;
+			}
+
 		</style>
 	</head>
 	<body>
@@ -245,31 +285,41 @@
 				<button type="submit" id="send_direct_button">Send</button>
 			</form>
 		</div>
+		<div class="hidden" id="modal_search">
+			<form id="search_message_form" class="entry_field">
+						<input type="text" placeholder="Search Current Room">
+						<button id="submit_search_button" type="submit">Submit</button>
+						<div id="search_messages" class="messages_window">
+							<div class="messages_window">
+								<ul class="messages_list">
+									
+								</ul>
+							</div>
+						</div>
+
+			</form>
+		</div>
 		<div class="hidden" id="chat_room">
 			<div class="main">
 				<ul class="current_rooms_list">
 					<li id="Global" class="current_rooms_list_item active">Global</li>
 					<li id="create_new_room" class="current_rooms_list_item">+</li>
 				</ul>
-				<div class="messages_window">
+				<div id="chat_messages" class="messages_window">
 					<ul class="messages_list">
-						<li class="messages_list_item" data-user="Nathan">
-							<div class="avatar"></div>
-							<div class="message">Hey Ricky!</div>
-							<div class="user">Nathan W.</div>
-						</li>
-						<li class="messages_list_item" data-user="Ricky">
-							<div class="avatar"></div>
-							<div class="message">Hey Nathan!</div>
-							<div class="user">Ricky W.</div>
-						</li>
+						
 					</ul>
 				</div>
+				
 				<form id="submit_message_form" class="entry_field">
 					<input type="text" placeholder="Say something">
 					<button id="submit_message_button">Submit</button>
 				</form>
+				
+				
+
 			</div>
+			<button id="submit_search" type="button">Search Current Room</button>
 			<ul class="user_list">
 				<div class="header">Chatters</div>
 				<!--<li class="user_list_item">Ricky W.</li>
@@ -428,6 +478,35 @@
 				}
 			
 		}
+
+		var submitSearch = function(){
+			 
+				var room = getCurrentRoom();
+				
+				var message = document.getElementById("search_message_form").querySelector("input").value;
+				$("#search_messages .messages_list").empty();
+
+			  if(message !=""){
+					$.ajax({
+								type: 'POST',
+								url: $(location).attr('origin') + '/search/'+encodeURIComponent(room)+'/{{ .State }}',
+								//contentType: 'application/octet-stream; charset=utf-8',
+								dataType: 'json',
+								success: function(result) {
+									//submitMessageComplete(message);
+									for (var i = 0, len = result.length; i < len; i++) {
+										console.log(result[i])
+										addMessageToSearch(result[i]);
+									}
+								},
+								processData: false,
+								data: message
+							});
+
+				}
+				 
+				 //closeModal();
+		}
 		var sendDirectMessage = function(){
 			
 			//var message = document.getElementById("send_direct_form").querySelector("input").value;
@@ -483,6 +562,8 @@
 			launchModal("send_direct");
 
 		});
+	
+		
 		$(".current_rooms_list").on('click','li',function(){
 			id=$(this).attr('id');
 			if (id!="create_new_room"){
@@ -519,12 +600,13 @@
 							processData: false,
 				
 						});
+						
 		}
 
 		var setCurrentRoomMessages = function(){
 			var room = getCurrentRoom();
 			//document.getElementById("chat_room").querySelector(".messages_list")
-			$(".messages_list").empty();
+			$("#chat_messages .messages_list").empty();
 			$.ajax({
 							type: 'GET',
 							url: $(location).attr('origin') + '/chat/'+encodeURIComponent(room)+'/{{ .State }}',
@@ -596,8 +678,7 @@
 			}
 
 
-
-			document.getElementById("chat_room").querySelector(".messages_list").insertAdjacentHTML("beforeend", 
+			document.getElementById("chat_messages").querySelector(".messages_list").insertAdjacentHTML("beforeend", 
 				"<li class='messages_list_item' data-user='" + 
 					chat.user.name.replace(" ", "_") + 
 				"'><div class='avatar' ></div><div class='message'>" + 
@@ -607,6 +688,17 @@
 				"</div></li>"
 			);
 		}
+
+		var addMessageToSearch = function(chat){
+			document.getElementById("search_messages").querySelector(".messages_list").insertAdjacentHTML("beforeend", 
+				"<li class='messages_list_item' '></div><div class='user'>" + 
+					chat.user.name +
+				"</div><div class='message'>" + 
+					chat.message + 
+				"</div></li>"
+			);
+		}
+		
 
 		var displayDM = function(dm){
 			console.log(dm);
@@ -640,7 +732,8 @@
 		var addUser= function(newUser){
 			console.log("Adding new user: ");
 			console.log(newUser);
-			$("<style type='text/css'> #chat_room .main .messages_window [data-user="+newUser.name.replace(" ", "_")+"] .avatar { background-image: url("+newUser.picture+");} </style>").appendTo("head");
+		
+			$("<style type='text/css'> #chat_room .main  .messages_window [data-user="+newUser.name.replace(" ", "_")+"] .avatar { background-image: url("+newUser.picture+");} </style>").appendTo("head");
 			chat_users[newUser.id]=newUser;
 			
 			classStuff="class='user_list_item'";
@@ -671,13 +764,22 @@
 			document.getElementById("modal_" + modalId).className = "";
 		}
 
+		var launchSearch = function(){
+			$("#search_messages .messages_list").empty();
+			launchModal("search")
+		}
+
+
 		document.getElementById("login_button").addEventListener("click", login);
 		document.getElementById("create_room_button").addEventListener("click", createRoom);
 		document.getElementById("send_direct_button").addEventListener("click", sendDirectMessage);
+		document.getElementById("submit_search_button").addEventListener("click", submitSearch);
 		document.getElementById("create_new_room").addEventListener("click", launchModal.bind(this, "create_room"));
 		document.getElementById("shadow_cover").addEventListener("click", closeModal);
-		document.getElementById("submit_message_button").addEventListener("click", submitMessage);
+		document.getElementById("submit_search").addEventListener("click", launchSearch);
+		
 
+		
 		[].forEach.call(document.querySelectorAll("form"), function(el) {
 			el.addEventListener("submit", function(e) {
 				e.preventDefault();

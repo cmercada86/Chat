@@ -15,6 +15,7 @@ type Config struct {
 	PostgresHost    string `json:"postgres_host"`
 	PostgresUser    string `json:"postgres_user"`
 	PostgresPass    string `json:"postgres_pass"`
+	SearchURL       string `json:"search_url"`
 }
 
 func GetConfig() *Config {

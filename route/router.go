@@ -65,6 +65,12 @@ var routes = []Route{
 		Pattern:     "/dm/update/{message_id}/{state}",
 		HandlerFunc: controller.SetMessageSeen,
 	},
+	Route{
+		Name:        "search",
+		Method:      "POST",
+		Pattern:     "/search/{room}/{state}",
+		HandlerFunc: controller.SearchChats,
+	},
 }
 
 func NewRouter() *mux.Router {
