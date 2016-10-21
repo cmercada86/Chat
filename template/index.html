@@ -662,9 +662,9 @@
 			}
 			return false
 		}
-		var roomExists=function(room){
+		var roomExists=function(newRoom){
 			for(var r in rooms){
-				if (room==r){
+				if (newRoom==rooms[r]){
 					return true
 				}
 			}
