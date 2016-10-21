@@ -357,6 +357,7 @@
 		//var state = '{{ .State }}';
 		var user ={};
 		var chat_users={};
+		var rooms=[];
 
 		// candidate will need to modify the following functions
 		var login = function() {
@@ -434,7 +435,7 @@
 						}
 						break;
 					case "room":
-						if (!roomExists){
+						if (!roomExists(data.message)){
 							addNewRoom(data.message);
 						}
 						break;
@@ -445,13 +446,17 @@
 
 
 		var createRoom = function() {
+			
 			var roomName = document.getElementById("create_room_form").querySelector("input").value;
-			document.getElementById("create_room_form").querySelector("input").value="";
-			if (!roomExists){
+			
+			
+			if (!roomExists(roomName)){
+				console.log(roomName)
 				addNewRoom(roomName);
 				//Set to active!
 				setRoomActive(roomName);
 			}
+			document.getElementById("create_room_form").querySelector("input").value="";
 			closeModal();
 		}
 
@@ -546,7 +551,7 @@
 
 		var addNewRoom = function(roomName) {
 			
-
+			rooms.push(roomName)
 			
 			document.getElementById("create_new_room").insertAdjacentHTML("beforebegin", "<li id='"+roomName+"' class='current_rooms_list_item' >" + roomName + "</li>");
 	
