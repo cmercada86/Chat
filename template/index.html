@@ -454,6 +454,7 @@
 				console.log(roomName)
 				addNewRoom(roomName);
 				//Set to active!
+				$("#chat_messages .messages_list").empty();
 				setRoomActive(roomName);
 			}
 			document.getElementById("create_room_form").querySelector("input").value="";
